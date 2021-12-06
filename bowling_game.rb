@@ -41,20 +41,29 @@ class BowlingGame
   end
 
   def roll
+    init = 0
     while @contador <= 9
-      (0..@contador).each do |round|
-        score = 10
-        (0..1).each do |num|
-          strike = rand(0..score)
-          @rounds[round][num] = strike
-          score -= strike
-        end
-        @rounds[round][1] = 10 if @rounds[round][0] + @rounds[round][1] == 10 && @rounds[round][0] != 10
-      end
+      strikes(init)
       @contador += 1
+      init += 1
     end
     round10_strike
-    score
+    round10_score
+    final_score
+    draw
+  end
+
+  def strikes(init)
+    (init..@contador).each do |round|
+      score = 10
+      (0..1).each do |num|
+        strike = rand(0..score)
+        @rounds[round][num] = strike
+        score -= strike
+      end
+      @rounds[round][1] = 10 if @rounds[round][0] + @rounds[round][1] == 10 && @rounds[round][0] != 10
+      score(round) if round != 9
+    end
   end
 
   def round10_strike
@@ -70,20 +79,47 @@ class BowlingGame
     end
   end
 
-  def score
-    (0..@contador - 2).each do |round|
-      @score[round] = if @rounds[round][1] == 10
-                        10
-                      else
-                        @rounds[round][0] + @rounds[round][1]
-                      end
-    end
-    round10_score
+  def score(round)
+    @score[round] = if @rounds[round][1] == 10
+                      10
+                    else
+                      @rounds[round][0] + @rounds[round][1]
+                    end
   end
 
   def round10_score
-    (0..2).each do |num|
-      @score[9] += @rounds[9][num]
+    if @rounds[9][1] == 10
+      (1..2).each do |num|
+        @score[9] += @rounds[9][num]
+      end
+    else
+      (0..2).each do |num|
+        @score[9] += @rounds[9][num]
+      end
+    end
+  end
+
+  def final_score
+    (0..@contador - 2).each do |round|
+      strike(round) if @rounds[round][0] == 10
+      spare(round) if @rounds[round][1] == 10
+    end
+    @rounds[9][@rounds[9].length - 1] = @score[9]
+    suma
+  end
+
+  def strike(round)
+    @score[round] += @score[round + 1]
+  end
+
+  def spare(round)
+    @score[round] += @rounds[round + 1][0]
+  end
+
+  def suma
+    (0..@contador - 1).each do |round|
+      @score[round] += @score[round - 1] if round >= 1
+      @rounds[round][@rounds[round].length - 1] = @score[round]
     end
   end
 
@@ -104,9 +140,11 @@ class BowlingGame
       print("#{@rounds[round][num]} ")
     end
   end
+
+  def play
+    roll
+  end
 end
 
 game = BowlingGame.new
-game.roll
-game.draw
-game.hola
+game.play
